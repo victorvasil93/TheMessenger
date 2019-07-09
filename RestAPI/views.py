@@ -10,7 +10,7 @@ from django.http import Http404, HttpResponseBadRequest
 
 from .models import Message
 
-from serializers import MessageSerializer
+from .serializers import MessageSerializer
 
 
 # Consts
