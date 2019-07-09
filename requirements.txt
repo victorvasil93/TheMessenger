@@ -1,6 +1,5 @@
 Django
 djangorestframework
-django-toolbel
 gunicorn
 psycopg2
 static3
