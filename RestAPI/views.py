@@ -18,24 +18,21 @@ MESSAGE_SENDER_KEY = 'sender'
 REQUEST_QUERY_PARAMS_RECEIVER_PARAM = 'receiver'
 
 # Error Messages Patterns Consts
-FETCHING_MESSAGES_FOR_USER_ERROR_PATTERN = "User {0} may not exist or wrong param name passed, ERROR: {1}"
-MESSAGE_WAS_NOT_FOUND_ERROR_PATTERN = "Massage with ID {0} not found, ERROR: {1}"
+FETCHING_MESSAGES_FOR_USER_ERROR_PATTERN = "User {0} may not exist, ERROR: {1}"
+MESSAGE_WAS_NOT_FOUND_ERROR_PATTERN = "Error accrued fetching messages for {0}, ERROR: {1}"
+MESSAGE_IS_NOT_RELATED_TO_USER_PATTERN = "Message is not related to logged user."
 
 
 class MessagesViewSet(ViewSet):
     authentication_classes = (BasicAuthentication,)
     permission_classes = (IsAuthenticated,)
 
-    def list(self, request):
-        messages = Message.objects.all()
-        messages_serializer = MessageSerializer(messages, many=True)
-        return Response(messages_serializer.data)
-
     def create(self, request):
+        logged_user = request.user.username
         message_data = request.data.dict()
 
         # Set logged user as a sender.
-        message_data[MESSAGE_SENDER_KEY] = request.user.username
+        message_data[MESSAGE_SENDER_KEY] = logged_user
 
         message_serializer = MessageSerializer(data=message_data)
 
@@ -46,43 +43,48 @@ class MessagesViewSet(ViewSet):
                                       "Check passed request body arguments for validity.")
 
     def destroy(self, request, pk=None):
+        logged_user = request.user.username
+
         try:
             message = Message.objects.get(pk=pk)
         except Exception as err:
             return Http404(MESSAGE_WAS_NOT_FOUND_ERROR_PATTERN.format(pk, err.message))
 
-        logged_user = request.user.username
-
         if message.is_from_sender(logged_user) or message.is_related_to_receiver(logged_user):
             message.delete()
             return Response("Message with ID {0} was deleted successfully.".format(pk))
-        return HttpResponseBadRequest("Message is not related to logged user.")
+        return HttpResponseBadRequest(MESSAGE_IS_NOT_RELATED_TO_USER_PATTERN)
 
     @detail_route(methods=['post'])
     def read_message(self, request, pk=None):
         """
         Return message content by ID and mark it as read.
         """
+        logged_user = request.user.username
+
         try:
             message = Message.objects.get(pk=pk)
         except Exception as err:
             return Http404(MESSAGE_WAS_NOT_FOUND_ERROR_PATTERN.format(pk, err.message))
 
-        message.mark_as_read()
-        serialized_message = MessageSerializer(message)
-        return Response(serialized_message.data)
+        if message.is_related_to_receiver(logged_user):
+            message.mark_as_read()
+            serialized_message = MessageSerializer(message)
+            return Response(serialized_message.data)
+        return HttpResponseBadRequest(MESSAGE_IS_NOT_RELATED_TO_USER_PATTERN)
 
     @list_route(methods=['get'])
-    def messages_for_user(self, request):
+    def received_messages(self, request):
         """
-        Get all messages received by user for username.
+        Get all messages received by logged user.
         """
-        username = request.query_params.get(REQUEST_QUERY_PARAMS_RECEIVER_PARAM)
+        logged_user = request.user.username
+
         try:
-            messages = Message.fetch_received_messages_for_user(username=username)
+            messages = Message.fetch_received_messages_for_user(username=logged_user)
         except Exception as err:
             return HttpResponseBadRequest(FETCHING_MESSAGES_FOR_USER_ERROR_PATTERN.format(
-                username,
+                logged_user,
                 err.message
             ))
 
@@ -90,16 +92,17 @@ class MessagesViewSet(ViewSet):
         return Response(messages_serializer.data)
 
     @list_route(methods=['get'])
-    def unread_messages_for_user(self, request):
+    def unread_messages(self, request):
         """
-        Get all unread messages received by user for username.
+        Get all unread messages received by logged user.
         """
-        username = request.query_params.get(REQUEST_QUERY_PARAMS_RECEIVER_PARAM)
+        logged_user = request.user.username
+
         try:
-            messages = Message.fetch_received_unread_messages_for_user(username=username)
+            messages = Message.fetch_received_unread_messages_for_user(username=logged_user)
         except Exception as err:
             return HttpResponseBadRequest(FETCHING_MESSAGES_FOR_USER_ERROR_PATTERN.format(
-                username,
+                logged_user,
                 err.message
             ))
 
