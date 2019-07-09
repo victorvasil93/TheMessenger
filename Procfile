@@ -1,1 +1,1 @@
-web: gunicorn themesser.wsgi --log-file -
+web: gunicorn themessenger.wsgi --log-file -
