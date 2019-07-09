@@ -6,8 +6,8 @@ import datetime
 
 
 class Message(models.Model):
-    sender = models.ForeignKey(User, related_name='sender')
-    receiver = models.ForeignKey(User, related_name='receiver')
+    sender = models.ForeignKey(User, related_name='sender', on_delete=models.PROTECT)
+    receiver = models.ForeignKey(User, related_name='receiver', on_delete=models.PROTECT)
     subject = models.CharField(max_length=1000)
     creation_date = models.DateTimeField(default=datetime.datetime.now())
     is_read = models.BooleanField(default=False)
