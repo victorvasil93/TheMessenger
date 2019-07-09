@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-import models
+from models import Message
 from django.contrib import admin
 
-admin.site.register(models.Message)
+admin.site.register(Message)
