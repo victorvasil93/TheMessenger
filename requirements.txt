@@ -4,3 +4,4 @@ gunicorn
 psycopg2
 static3
 wheel
+dj-database-url 
