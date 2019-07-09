@@ -8,7 +8,7 @@ from rest_framework.response import Response
 
 from django.http import Http404, HttpResponseBadRequest
 
-from models import Message
+from .models import Message
 
 from serializers import MessageSerializer
 
