@@ -52,7 +52,7 @@ class MessagesViewSet(ViewSet):
 
         if message.is_from_sender(logged_user) or message.is_related_to_receiver(logged_user):
             message.delete()
-            return Response("Message with ID {0} was deleted successfully.".format(pk))
+            return Response("Message with ID {0} was successfully deleted.".format(pk))
         return HttpResponseBadRequest(MESSAGE_IS_NOT_RELATED_TO_USER_PATTERN)
 
     @detail_route(methods=['post'])
